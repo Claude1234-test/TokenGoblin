@@ -619,8 +619,21 @@ export default function App() {
       stopImpatientTap();
 
       if (!response.ok) {
-        const errDetail = await response.json();
-        throw new Error(errDetail.error || "Gemini optimization request failed");
+        let errMessage = `Server error (status: ${response.status})`;
+        try {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const errDetail = await response.json();
+            errMessage = errDetail.error || errMessage;
+          } else {
+            const text = await response.text();
+            const cleanText = text.length > 120 ? text.substring(0, 120) + "..." : text;
+            errMessage = `${errMessage}: ${cleanText.replace(/<[^>]*>/g, '').trim()}`;
+          }
+        } catch (e) {
+          // ignore error parsing
+        }
+        throw new Error(errMessage);
       }
 
       const data = await response.json();
