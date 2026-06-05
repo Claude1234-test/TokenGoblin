@@ -12,6 +12,11 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Health check endpoint
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", backend: "express", timestamp: new Date().toISOString() });
+  });
+
   // API Route
   app.post("/api/optimize", async (req, res) => {
     try {

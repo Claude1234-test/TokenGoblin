@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { countTokens } from "./lib/tokenizer";
 import { synth } from "./lib/synth";
-import { parseAndMapTokens, TokenSpan } from "./lib/parser";
+import { parseAndMapTokens, TokenSpan, optimizePromptLocally } from "./lib/parser";
 import { SnipCharacter } from "./components/SnipCharacter";
 import { gsap } from "gsap";
 import { 
@@ -609,45 +609,11 @@ export default function App() {
     startImpatientTap();
 
     try {
-      // Trigger fullstack Express endpoint API call
-      const response = await fetch("/api/optimize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: inputText })
-      });
-
+      // Offline local optimization with a short cute goblin thinking moment
+      await waitMs(600);
       stopImpatientTap();
 
-      if (!response.ok) {
-        let errMessage = `Server error (status: ${response.status})`;
-        try {
-          const contentType = response.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-            const errDetail = await response.json();
-            errMessage = errDetail.error || errMessage;
-          } else {
-            const text = await response.text();
-            const cleanText = text.length > 120 ? text.substring(0, 120) + "..." : text;
-            errMessage = `${errMessage}: ${cleanText.replace(/<[^>]*>/g, '').trim()}`;
-          }
-        } catch (e) {
-          // ignore error parsing
-        }
-        throw new Error(errMessage);
-      }
-
-      let data;
-      const responseText = await response.text();
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseErr) {
-        const preview = responseText.length > 120 ? responseText.substring(0, 120) + "..." : responseText;
-        throw new Error(`Invalid server response formatting inside Snip's backend: ${preview.replace(/<[^>]*>/g, '').trim()}`);
-      }
-      
-      if (!data || typeof data.optimized !== "string") {
-        throw new Error("Server returned empty or malformed optimization results.");
-      }
+      const data = optimizePromptLocally(inputText);
       
       // Optimized prompt
       setOptimizedText(data.optimized);
