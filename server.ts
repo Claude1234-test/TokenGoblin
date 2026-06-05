@@ -99,7 +99,40 @@ Rules for optimization:
         return res.status(500).json({ error: "Failed to get response from Gemini" });
       }
 
-      const result = JSON.parse(responseText);
+      let result;
+      const cleanResponseText = responseText.trim();
+      try {
+        result = JSON.parse(cleanResponseText);
+      } catch (parseErr) {
+        // Fallback: try to strip markdown backticks if any
+        let jsonStr = cleanResponseText;
+        if (jsonStr.startsWith("```")) {
+          // Remove start code blocks (e.g., ```json or ```)
+          jsonStr = jsonStr.replace(/^```[a-zA-Z]*\s*/, "");
+          // Remove ending code blocks
+          jsonStr = jsonStr.replace(/\s*```$/, "");
+        }
+        jsonStr = jsonStr.trim();
+        try {
+          result = JSON.parse(jsonStr);
+        } catch (secondErr) {
+          // If still fails, try to extract first outer '{...}' statement
+          const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            try {
+              result = JSON.parse(jsonMatch[0]);
+            } catch (thirdErr) {
+              return res.status(500).json({ 
+                error: `Failed to parse Gemini response as JSON. Cleaned response: ${jsonStr.substring(0, 100)}...` 
+              });
+            }
+          } else {
+            return res.status(500).json({ 
+              error: `Failed to parse Gemini response as JSON. Format: ${jsonStr.substring(0, 100)}...` 
+            });
+          }
+        }
+      }
       return res.json(result);
     } catch (err: any) {
       console.error(err);

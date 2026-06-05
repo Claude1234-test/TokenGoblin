@@ -636,7 +636,18 @@ export default function App() {
         throw new Error(errMessage);
       }
 
-      const data = await response.json();
+      let data;
+      const responseText = await response.text();
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseErr) {
+        const preview = responseText.length > 120 ? responseText.substring(0, 120) + "..." : responseText;
+        throw new Error(`Invalid server response formatting inside Snip's backend: ${preview.replace(/<[^>]*>/g, '').trim()}`);
+      }
+      
+      if (!data || typeof data.optimized !== "string") {
+        throw new Error("Server returned empty or malformed optimization results.");
+      }
       
       // Optimized prompt
       setOptimizedText(data.optimized);
