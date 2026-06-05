@@ -1,0 +1,6 @@
+{
+  "name": "Token Goblin",
+  "description": "An interactive web application that optimizes AI prompts to reduce token counts with an animated mascot, Snip the Token Goblin.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
